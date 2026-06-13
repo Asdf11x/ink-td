@@ -1,23 +1,65 @@
-[gd_scene load_steps=7 format=3 uid="uid://cxv80f4fsv2d1"]
+[gd_scene load_steps=17 format=3 uid="uid://cxv80f4fsv2d1"]
 
 [ext_resource type="Script" path="res://scripts/main_game.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ink_manager.gd" id="2_manager"]
 [ext_resource type="Script" path="res://scripts/game_board_bg.gd" id="3_bg"]
 [ext_resource type="Script" path="res://scripts/ink_grid.gd" id="4_grid"]
 [ext_resource type="Script" path="res://scripts/pen_bar.gd" id="5_pen"]
+[ext_resource type="Script" path="res://scripts/wave_spawner.gd" id="6_spawner"]
+[ext_resource type="Script" path="res://scripts/game_hud.gd" id="7_hud"]
+[ext_resource type="Script" path="res://scripts/level_banner.gd" id="8_banner"]
+[ext_resource type="Script" path="res://scripts/results_overlay.gd" id="9_results"]
+[ext_resource type="Script" path="res://scripts/wave_controls.gd" id="10_controls"]
+[ext_resource type="Script" path="res://scripts/eraser_cursor.gd" id="11_eraser"]
+[ext_resource type="Script" path="res://scripts/debug_menu.gd" id="12_debug"]
+[ext_resource type="Script" path="res://scripts/shortcut_overlay.gd" id="13_shortcuts"]
+[ext_resource type="Script" path="res://scripts/pause_menu.gd" id="14_pause"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ui"]
-bg_color = Color(0.08, 0.06, 0.09, 0.92)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dock"]
+bg_color = Color(0.06, 0.05, 0.08, 0.95)
 border_width_top = 2
+border_color = Color(0.28, 0.22, 0.34, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud"]
+bg_color = Color(0.08, 0.06, 0.09, 0.88)
+border_width_bottom = 2
 border_color = Color(0.35, 0.28, 0.42, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn"]
+bg_color = Color(0.14, 0.11, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.34, 0.55, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_overlay"]
+bg_color = Color(0.04, 0.03, 0.06, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.42, 0.72, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
 
 [node name="MainGame" type="Node2D"]
 script = ExtResource("1_main")
 
 [node name="InkManager" type="Node" parent="."]
 script = ExtResource("2_manager")
+
+[node name="WaveSpawner" type="Node" parent="."]
+script = ExtResource("6_spawner")
+
+[node name="ShortcutOverlay" type="Node" parent="."]
+script = ExtResource("13_shortcuts")
 
 [node name="GameArea" type="Node2D" parent="."]
 
@@ -37,19 +79,30 @@ z_index = 1
 unique_name_in_owner = true
 z_index = 2
 
+[node name="Enemies" type="Node2D" parent="GameArea"]
+z_index = 3
+
+[node name="Towers" type="Node2D" parent="GameArea"]
+z_index = 2
+
+[node name="Projectiles" type="Node2D" parent="GameArea"]
+z_index = 4
+
+[node name="EraserCursor" type="Node2D" parent="GameArea"]
+z_index = 4
+script = ExtResource("11_eraser")
+
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="PenBar" type="Control" parent="UI"]
-anchors_preset = 12
-anchor_top = 1.0
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 10
 anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -148.0
+offset_bottom = 68.0
 grow_horizontal = 2
-grow_vertical = 0
-script = ExtResource("5_pen")
+script = ExtResource("7_hud")
 
-[node name="Panel" type="Panel" parent="UI/PenBar"]
+[node name="HudPanel" type="Panel" parent="UI/HUD"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -57,47 +110,227 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_ui")
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
 
-[node name="Margin" type="MarginContainer" parent="UI/PenBar"]
+[node name="Margin" type="MarginContainer" parent="UI/HUD"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 8
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 6
 
-[node name="VBox" type="VBoxContainer" parent="UI/PenBar/Margin"]
+[node name="HBox" type="HBoxContainer" parent="UI/HUD/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="LeftInfo" type="VBoxContainer" parent="UI/HUD/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LevelLabel" type="Label" parent="UI/HUD/Margin/HBox/LeftInfo"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "Level 1 / 5"
+
+[node name="WaveLabel" type="Label" parent="UI/HUD/Margin/HBox/LeftInfo"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.7, 0.88, 1)
+theme_override_font_sizes/font_size = 13
+text = "Wave 1 / 5"
+
+[node name="LivesRow" type="HBoxContainer" parent="UI/HUD/Margin/HBox/LeftInfo"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="HintLabel" type="Label" parent="UI/PenBar/Margin/VBox"]
-unique_name_in_owner = true
+[node name="LivesText" type="Label" parent="UI/HUD/Margin/HBox/LeftInfo/LivesRow"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.82, 0.74, 0.64, 1)
+theme_override_colors/font_color = Color(0.82, 0.62, 0.62, 1)
 theme_override_font_sizes/font_size = 13
-text = "Void — Maze walls"
-horizontal_alignment = 1
+text = "Lives:"
 
-[node name="PensRoot" type="HBoxContainer" parent="UI/PenBar/Margin/VBox"]
+[node name="HeartsRoot" type="HBoxContainer" parent="UI/HUD/Margin/HBox/LeftInfo/LivesRow"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 18
+theme_override_constants/separation = 2
+
+[node name="EnemiesLabel" type="Label" parent="UI/HUD/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.62, 0.62, 1)
+theme_override_font_sizes/font_size = 14
+text = "Intruders: 0"
+
+[node name="XpLabel" type="Label" parent="UI/HUD/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.65, 0.55, 1)
+theme_override_font_sizes/font_size = 13
+text = "XP 0  ·  Lv 1"
+
+[node name="TimerLabel" type="Label" parent="UI/HUD/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.72, 0.68, 0.82, 1)
+theme_override_font_sizes/font_size = 14
+text = "0 sec"
+horizontal_alignment = 2
+
+[node name="HudMenuButton" type="Button" parent="UI/HUD/Margin/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "Menu"
+
+[node name="WaveControls" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 72.0
+offset_bottom = 112.0
+grow_horizontal = 2
+script = ExtResource("10_controls")
+
+[node name="Panel" type="Panel" parent="UI/WaveControls"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_hud")
+
+[node name="Margin" type="MarginContainer" parent="UI/WaveControls"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 4
+
+[node name="HBox" type="HBoxContainer" parent="UI/WaveControls/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
 alignment = 1
+
+[node name="GoButton" type="Button" parent="UI/WaveControls/Margin/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn")
+text = "GO"
+
+[node name="PauseButton" type="Button" parent="UI/WaveControls/Margin/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn")
+text = "Pause"
+
+[node name="Sep" type="VSeparator" parent="UI/WaveControls/Margin/HBox"]
+layout_mode = 2
+
+[node name="Speed1Button" type="Button" parent="UI/WaveControls/Margin/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 0)
+layout_mode = 2
+toggle_mode = true
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn")
+button_pressed = true
+text = "1x"
+
+[node name="Speed3Button" type="Button" parent="UI/WaveControls/Margin/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 0)
+layout_mode = 2
+toggle_mode = true
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn")
+text = "3x"
+
+[node name="Speed5Button" type="Button" parent="UI/WaveControls/Margin/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 0)
+layout_mode = 2
+toggle_mode = true
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_btn")
+text = "5x"
+
+[node name="PenBar" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -128.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("5_pen")
+
+[node name="Dock" type="Panel" parent="UI/PenBar"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dock")
+
+[node name="PensRoot" type="HBoxContainer" parent="UI/PenBar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -128.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 28
+alignment = 0
 
 [node name="FeedbackLabel" type="Label" parent="UI"]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -280.0
-offset_top = 12.0
+offset_top = 58.0
 offset_right = 280.0
-offset_bottom = 36.0
+offset_bottom = 82.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.95, 0.82, 0.55, 1)
 theme_override_font_sizes/font_size = 14
@@ -105,16 +338,286 @@ text = "Prototype"
 horizontal_alignment = 1
 modulate = Color(1, 1, 1, 0)
 
-[node name="TitleLabel" type="Label" parent="UI"]
-anchors_preset = 5
+[node name="LevelBanner" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 8
 anchor_left = 0.5
+anchor_top = 0.5
 anchor_right = 0.5
-offset_left = -160.0
-offset_top = 44.0
-offset_right = 160.0
-offset_bottom = 72.0
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -28.0
+offset_right = 220.0
+offset_bottom = 28.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(0.55, 0.45, 0.62, 1)
-theme_override_font_sizes/font_size = 18
-text = "inkTD — Alchemist's Grid"
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("8_banner")
+
+[node name="BannerLabel" type="Label" parent="UI/LevelBanner"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.95, 0.88, 0.65, 1)
+theme_override_colors/font_outline_color = Color(0.1, 0.08, 0.12, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 22
+text = "Level 1 — Prepare!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ResultsOverlay" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("9_results")
+
+[node name="Dim" type="ColorRect" parent="UI/ResultsOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.02, 0.04, 0.72)
+
+[node name="Center" type="CenterContainer" parent="UI/ResultsOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="UI/ResultsOverlay/Center"]
+custom_minimum_size = Vector2(420, 260)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_overlay")
+
+[node name="VBox" type="VBoxContainer" parent="UI/ResultsOverlay/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="UI/ResultsOverlay/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.78, 0.98, 1)
+theme_override_font_sizes/font_size = 28
+text = "The Core Holds!"
+horizontal_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="UI/ResultsOverlay/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.72, 0.82, 1)
+theme_override_font_sizes/font_size = 14
+text = "Congratulations!"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="TimeLabel" type="Label" parent="UI/ResultsOverlay/Center/Panel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.65, 0.55, 1)
+theme_override_font_sizes/font_size = 15
+text = "Run completed in 0 sec"
+horizontal_alignment = 1
+
+[node name="ResultsMenuButton" type="Button" parent="UI/ResultsOverlay/Center/Panel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Back to Menu"
+
+[node name="DebugMenu" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -220.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 1
+script = ExtResource("12_debug")
+
+[node name="DebugPanel" type="PanelContainer" parent="UI/DebugMenu"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -292.0
+offset_top = -176.0
+offset_right = -84.0
+offset_bottom = -48.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_overlay")
+
+[node name="Margin" type="MarginContainer" parent="UI/DebugMenu/DebugPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="UI/DebugMenu/DebugPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="UI/DebugMenu/DebugPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.78, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+text = "Debug"
+
+[node name="UnlimitedInkCheck" type="CheckBox" parent="UI/DebugMenu/DebugPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Unlimited ink"
+
+[node name="LevelRow" type="HBoxContainer" parent="UI/DebugMenu/DebugPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LevelLabel" type="Label" parent="UI/DebugMenu/DebugPanel/Margin/VBox/LevelRow"]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Level"
+
+[node name="LevelSpin" type="SpinBox" parent="UI/DebugMenu/DebugPanel/Margin/VBox/LevelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 5.0
+value = 1.0
+
+[node name="WaveRow" type="HBoxContainer" parent="UI/DebugMenu/DebugPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WaveLabel" type="Label" parent="UI/DebugMenu/DebugPanel/Margin/VBox/WaveRow"]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Wave"
+
+[node name="WaveSpin" type="SpinBox" parent="UI/DebugMenu/DebugPanel/Margin/VBox/WaveRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 5.0
+value = 1.0
+
+[node name="DebugGoButton" type="Button" parent="UI/DebugMenu/DebugPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "Go to level / wave"
+
+[node name="DebugToggleButton" type="Button" parent="UI/DebugMenu"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -76.0
+offset_top = -40.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "Debug"
+
+[node name="PauseMenu" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("14_pause")
+
+[node name="Dim" type="ColorRect" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.02, 0.04, 0.72)
+
+[node name="Center" type="CenterContainer" parent="UI/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="UI/PauseMenu/Center"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_overlay")
+
+[node name="VBox" type="VBoxContainer" parent="UI/PauseMenu/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="UI/PauseMenu/Center/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.78, 0.98, 1)
+theme_override_font_sizes/font_size = 22
+text = "Paused"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="UI/PauseMenu/Center/Panel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "Resume game"
+
+[node name="QuitButton" type="Button" parent="UI/PauseMenu/Center/Panel/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
+text = "Return to menu"
+
+[node name="AltHint" type="Label" parent="UI/PauseMenu/Center/Panel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.58, 0.72, 1)
+theme_override_font_sizes/font_size = 11
+text = "Hold Alt for shortcuts"
 horizontal_alignment = 1

@@ -1,0 +1,6 @@
+[gd_scene load_steps=3 format=3 uid="uid://creep_scene01"]
+
+[ext_resource type="Script" path="res://scripts/creep.gd" id="1_creep"]
+
+[node name="Creep" type="Node2D"]
+script = ExtResource("1_creep")

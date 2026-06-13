@@ -1,27 +1,29 @@
 class_name PenBar
 extends Control
 
-const PEN_WIDTH := 72.0
-const PEN_HEIGHT_COLLAPSED := 34.0
-const PEN_HEIGHT_SELECTED := 118.0
+const PEN_WIDTH := 50.0
+const PEN_SLOT_HEIGHT := 128.0
+const PEN_TIP_VISIBLE := 30.0
+const PEN_FULL_HEIGHT := 116.0
 
 var ink_manager: InkManager
+var _show_shortcuts := false
 
 @onready var pens_root: HBoxContainer = %PensRoot
-@onready var hint_label: Label = %HintLabel
 
 
 func _ready() -> void:
-	for ink_type: InkType.Type in InkType.all_types():
-		var pen := _create_pen_widget(ink_type)
-		pens_root.add_child(pen)
+	mouse_filter = Control.MOUSE_FILTER_PASS
+	pens_root.mouse_filter = Control.MOUSE_FILTER_PASS
+	z_index = 20
+	for ink_type: InkType.Type in InkType.all_tool_types():
+		pens_root.add_child(_create_pen_widget(ink_type))
 
 
 func bind_manager(manager: InkManager) -> void:
 	if ink_manager:
 		ink_manager.selection_changed.disconnect(_on_selection_changed)
 		ink_manager.capacity_changed.disconnect(_on_capacity_changed)
-
 	ink_manager = manager
 	ink_manager.selection_changed.connect(_on_selection_changed)
 	ink_manager.capacity_changed.connect(_on_capacity_changed)
@@ -29,10 +31,17 @@ func bind_manager(manager: InkManager) -> void:
 	_on_selection_changed(ink_manager.selected)
 
 
+func set_shortcuts_visible(visible: bool) -> void:
+	if _show_shortcuts == visible:
+		return
+	_show_shortcuts = visible
+	_refresh_all_pens()
+
+
 func _create_pen_widget(ink_type: InkType.Type) -> Control:
 	var pen := Control.new()
 	pen.name = "Pen_%s" % InkType.DISPLAY_NAMES[ink_type]
-	pen.custom_minimum_size = Vector2(PEN_WIDTH, PEN_HEIGHT_SELECTED)
+	pen.custom_minimum_size = Vector2(PEN_WIDTH, PEN_SLOT_HEIGHT)
 	pen.set_meta("ink_type", ink_type)
 	pen.mouse_filter = Control.MOUSE_FILTER_STOP
 	pen.gui_input.connect(func(event: InputEvent) -> void:
@@ -40,85 +49,71 @@ func _create_pen_widget(ink_type: InkType.Type) -> Control:
 			if ink_manager:
 				ink_manager.select(ink_type)
 	)
-	pen.draw.connect(func() -> void:
-		_draw_pen(pen, ink_type)
-	)
+	pen.draw.connect(func() -> void: _draw_pen(pen, ink_type))
 	return pen
 
 
 func _draw_pen(pen: Control, ink_type: InkType.Type) -> void:
-	var selected := ink_manager != null and ink_manager.selected == ink_type
+	var selected: bool = ink_manager != null and ink_manager.selected == ink_type
 	var pool: InkPool = ink_manager.get_pool(ink_type) if ink_manager else null
-	var fraction := pool.fraction() if pool else 1.0
-
-	var width := pen.size.x
-	var height := PEN_HEIGHT_SELECTED if selected else PEN_HEIGHT_COLLAPSED
-	var origin := Vector2(0.0, PEN_HEIGHT_SELECTED - height)
-
-	var body_color := Color(0.12, 0.10, 0.14)
+	var width: float = pen.size.x
+	var bottom: float = pen.size.y
+	var visible_h: float = PEN_FULL_HEIGHT if selected else PEN_TIP_VISIBLE
+	var top: float = bottom - visible_h
 	var ink_color: Color = InkType.COLORS[ink_type]
 	var glow: Color = InkType.GLOW_COLORS[ink_type]
+	var nib_base_y: float = top + 16.0
 
-	pen.draw_rect(Rect2(origin.x + 8, origin.y + 4, width - 16, height - 8), body_color, true, 0.0, true)
-	pen.draw_rect(Rect2(origin.x + 8, origin.y + 4, width - 16, height - 8), glow.darkened(0.35), false, 2.0, true)
+	if ink_type == InkType.Type.ERASER:
+		ink_color = Color(0.85, 0.82, 0.78)
+		glow = Color(0.95, 0.92, 0.88)
 
-	var cap_height := 14.0 if selected else 10.0
-	pen.draw_rect(Rect2(origin.x + 14, origin.y + 6, width - 28, cap_height), Color(0.22, 0.18, 0.24), true)
-
-	var tube_top := origin.y + cap_height + 8.0
-	var tube_bottom := origin.y + height - 12.0
-	var tube_height := maxf(8.0, tube_bottom - tube_top)
-	var fill_height := tube_height * fraction
-	pen.draw_rect(
-		Rect2(origin.x + 22, tube_top + tube_height - fill_height, width - 44, fill_height),
-		ink_color.lerp(glow, 0.35),
-		true
+	pen.draw_colored_polygon(
+		PackedVector2Array([
+			Vector2(width * 0.5, top + 2.0),
+			Vector2(width * 0.5 - 8.0, nib_base_y),
+			Vector2(width * 0.5 + 8.0, nib_base_y),
+		]),
+		ink_color.lerp(glow, 0.15)
 	)
-	pen.draw_rect(Rect2(origin.x + 22, tube_top, width - 44, tube_height), glow.darkened(0.5), false, 1.5, true)
+	var barrel_top: float = nib_base_y + 2.0
+	var barrel_bottom: float = bottom - 14.0
+	if barrel_bottom > barrel_top:
+		pen.draw_rect(Rect2(10.0, barrel_top, width - 20.0, barrel_bottom - barrel_top), Color(0.14, 0.12, 0.17), true)
+		if pool and ink_type != InkType.Type.ERASER:
+			var fraction: float = pool.fraction()
+			var tube_h: float = barrel_bottom - barrel_top - 4.0
+			var fill_h: float = tube_h * fraction
+			pen.draw_rect(
+				Rect2(15.0, barrel_bottom - fill_h - 2.0, width - 30.0, fill_h),
+				ink_color.lerp(glow, 0.35), true
+			)
+
+	pen.draw_rect(Rect2(6.0, bottom - 12.0, width - 12.0, 10.0), Color(0.2, 0.17, 0.24), true)
 
 	if selected:
-		pen.draw_rect(Rect2(origin.x + 4, origin.y + 2, width - 8, height - 4), glow, false, 2.0, true)
-		var nib_y := origin.y + height - 8.0
-		pen.draw_colored_polygon(
-			PackedVector2Array([
-				Vector2(origin.x + width * 0.5, nib_y + 8.0),
-				Vector2(origin.x + width * 0.5 - 8.0, nib_y),
-				Vector2(origin.x + width * 0.5 + 8.0, nib_y),
-			]),
-			ink_color
-		)
+		pen.draw_rect(Rect2(2.0, top, width - 4.0, visible_h), glow, false, 2.0)
+		if pool and ink_type != InkType.Type.ERASER:
+			pen.draw_string(
+				ThemeDB.fallback_font,
+				Vector2(width * 0.5, barrel_top + 22.0),
+				str(int(pool.current)),
+				HORIZONTAL_ALIGNMENT_CENTER, int(width), 14, Color(0.95, 0.92, 0.88)
+			)
+		elif ink_type == InkType.Type.ERASER:
+			pen.draw_string(
+				ThemeDB.fallback_font,
+				Vector2(width * 0.5, barrel_top + 22.0),
+				"Rub",
+				HORIZONTAL_ALIGNMENT_CENTER, int(width), 11, Color(0.85, 0.82, 0.78)
+			)
 
-	var key_label := InkType.HOTKEY_LABELS[ink_type]
-	pen.draw_string(
-		ThemeDB.fallback_font,
-		Vector2(origin.x + 12, origin.y + height - 2),
-		key_label,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1,
-		14,
-		Color(0.85, 0.78, 0.68)
-	)
-
-	if selected:
-		var name_pos := Vector2(origin.x + width * 0.5, origin.y + cap_height + 18.0)
+	if _show_shortcuts:
 		pen.draw_string(
 			ThemeDB.fallback_font,
-			name_pos,
-			InkType.DISPLAY_NAMES[ink_type],
-			HORIZONTAL_ALIGNMENT_CENTER,
-			int(width - 8),
-			12,
-			glow
-		)
-		var amount_text := "%d" % int(pool.current) if pool else "0"
-		pen.draw_string(
-			ThemeDB.fallback_font,
-			Vector2(origin.x + width * 0.5, tube_top + tube_height * 0.55),
-			amount_text,
-			HORIZONTAL_ALIGNMENT_CENTER,
-			int(width - 8),
-			11,
-			Color(0.92, 0.88, 0.82)
+			Vector2(width * 0.5, bottom - 1.0),
+			InkType.HOTKEY_LABELS[ink_type],
+			HORIZONTAL_ALIGNMENT_CENTER, int(width), 12, Color(0.95, 0.88, 0.55)
 		)
 
 
@@ -128,14 +123,8 @@ func _refresh_all_pens() -> void:
 
 
 func _on_selection_changed(_ink_type: InkType.Type) -> void:
-	if hint_label and ink_manager:
-		var t: InkType.Type = ink_manager.selected
-		hint_label.text = "%s — %s" % [InkType.DISPLAY_NAMES[t], InkType.DESCRIPTIONS[t]]
-	for pen: Control in pens_root.get_children():
-		var selected := ink_manager.selected == pen.get_meta("ink_type")
-		pen.custom_minimum_size.y = PEN_HEIGHT_SELECTED if selected else PEN_HEIGHT_COLLAPSED
-		pen.queue_redraw()
+	_refresh_all_pens()
 
 
-func _on_capacity_changed(_ink_type: InkType.Type, _current: float, _max_capacity: float) -> void:
+func _on_capacity_changed(_ink_type: InkType.Type, _c: float, _m: float) -> void:
 	_refresh_all_pens()

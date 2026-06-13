@@ -10,7 +10,7 @@ static func has_path(
 	if walls.has(entry) or walls.has(exit):
 		return false
 
-	var visited: Dictionary = {}
+	var visited: Dictionary[Vector2i, bool] = {}
 	var queue: Array[Vector2i] = [entry]
 	visited[entry] = true
 	var dirs: Array[Vector2i] = [
