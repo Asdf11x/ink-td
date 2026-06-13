@@ -1,0 +1,120 @@
+[gd_scene load_steps=7 format=3 uid="uid://cxv80f4fsv2d1"]
+
+[ext_resource type="Script" path="res://scripts/main_game.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/ink_manager.gd" id="2_manager"]
+[ext_resource type="Script" path="res://scripts/game_board_bg.gd" id="3_bg"]
+[ext_resource type="Script" path="res://scripts/ink_grid.gd" id="4_grid"]
+[ext_resource type="Script" path="res://scripts/pen_bar.gd" id="5_pen"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ui"]
+bg_color = Color(0.08, 0.06, 0.09, 0.92)
+border_width_top = 2
+border_color = Color(0.35, 0.28, 0.42, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+
+[node name="MainGame" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="InkManager" type="Node" parent="."]
+script = ExtResource("2_manager")
+
+[node name="GameArea" type="Node2D" parent="."]
+
+[node name="BoardBg" type="Node2D" parent="GameArea"]
+script = ExtResource("3_bg")
+
+[node name="InkGrid" type="TileMapLayer" parent="GameArea"]
+unique_name_in_owner = true
+y_sort_enabled = false
+script = ExtResource("4_grid")
+
+[node name="SpecialLayerA" type="TileMapLayer" parent="GameArea"]
+unique_name_in_owner = true
+z_index = 1
+
+[node name="SpecialLayerB" type="TileMapLayer" parent="GameArea"]
+unique_name_in_owner = true
+z_index = 2
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="PenBar" type="Control" parent="UI"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -148.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("5_pen")
+
+[node name="Panel" type="Panel" parent="UI/PenBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ui")
+
+[node name="Margin" type="MarginContainer" parent="UI/PenBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="UI/PenBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HintLabel" type="Label" parent="UI/PenBar/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.74, 0.64, 1)
+theme_override_font_sizes/font_size = 13
+text = "Void — Maze walls"
+horizontal_alignment = 1
+
+[node name="PensRoot" type="HBoxContainer" parent="UI/PenBar/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="FeedbackLabel" type="Label" parent="UI"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -280.0
+offset_top = 12.0
+offset_right = 280.0
+offset_bottom = 36.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.95, 0.82, 0.55, 1)
+theme_override_font_sizes/font_size = 14
+text = "Prototype"
+horizontal_alignment = 1
+modulate = Color(1, 1, 1, 0)
+
+[node name="TitleLabel" type="Label" parent="UI"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_top = 44.0
+offset_right = 160.0
+offset_bottom = 72.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.55, 0.45, 0.62, 1)
+theme_override_font_sizes/font_size = 18
+text = "inkTD — Alchemist's Grid"
+horizontal_alignment = 1
